@@ -1,0 +1,18 @@
+#!/bin/bash
+
+export ANDROID_SDK=~/Android/Sdk
+export ANDROID_NDK=~/Android/Ndk/android-ndk-r10e
+export PATH=$ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin:$PATH
+export AUDIO_LIBS=/opt/android/3rd-android-4/3rd-android-4-armeabi-release
+
+./configure --help
+
+./configure \
+--host=android \
+--enable-vkeybd \
+--enable-release \
+--enable-optimizations \
+--with-tremor-prefix=$AUDIO_LIBS \
+--with-mad-prefix=$AUDIO_LIBS \
+--with-flac-prefix=$AUDIO_LIBS
+
