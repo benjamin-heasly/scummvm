@@ -313,7 +313,6 @@ public class ScummVMEvents implements
 
     @Override
     public void onError(int error) {
-        pushStringEvents("error " + error);
     }
 
     private void pushStringEvents(String string) {
@@ -321,8 +320,10 @@ public class ScummVMEvents implements
             return;
         }
 
+        String stringWithReturn = string + "\n";
+
         final KeyCharacterMap keyCharacterMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
-        final KeyEvent[] keyEvents = keyCharacterMap.getEvents(string.toCharArray());
+        final KeyEvent[] keyEvents = keyCharacterMap.getEvents(stringWithReturn.toCharArray());
 
         if (null == keyEvents) {
             return;
