@@ -320,11 +320,30 @@ public class ScummVMEvents implements
             return;
         }
 
-        String stringWithReturn = string + "\n";
+        final String lowercase = string.toLowerCase();
+        if (lowercase.endsWith("left") || lowercase.endsWith("west")) {
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, 1, 0, 0);
+            return;
+        } else if (lowercase.endsWith("right") || lowercase.endsWith("east")) {
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT, 1, 0, 0);
+            return;
+        } else if (lowercase.endsWith("up") || lowercase.endsWith("north")) {
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_UP, 1, 0, 0);
+            return;
+        } else if (lowercase.endsWith("down") || lowercase.endsWith("south")) {
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN, 1, 0, 0);
+            return;
+        } else if (lowercase.endsWith("center") || lowercase.endsWith("stop")) {
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_LEFT, 1, 0, 0);
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_RIGHT, 1, 0, 0);
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_UP, 1, 0, 0);
+            _scummvm.pushEvent(JE_DPAD, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_DOWN, 1, 0, 0);
+            return;
+        }
 
+        String withNewline = string + "\n";
         final KeyCharacterMap keyCharacterMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
-        final KeyEvent[] keyEvents = keyCharacterMap.getEvents(stringWithReturn.toCharArray());
-
+        final KeyEvent[] keyEvents = keyCharacterMap.getEvents(withNewline.toCharArray());
         if (null == keyEvents) {
             return;
         }
