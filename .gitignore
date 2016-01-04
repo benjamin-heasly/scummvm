@@ -28,8 +28,11 @@ lib*.a
 /Icon.*
 
 /build
+/build.tmp
 /staging
 /portdist
+*.so
+*.apk
 
 /backends/platform/dc/gui
 /backends/platform/dc/graphics
@@ -82,6 +85,7 @@ project.xcworkspace
 /dists/iphone/build
 /dists/iphone/scummvm.xcodeproj
 /dists/iphone/create_project
+/dists/android/gen
 /dists/macosx/build
 /dists/macosx/scummvm.xcodeproj
 /dists/macosx/create_project
@@ -185,6 +189,10 @@ ScummVM.includes
 
 #Ignore Komodo IDE/Edit project files
 *.komodoproject
+
+#Ignore intelliJ Idea/Android Studio files
+*.iml
+/.idea
 
 #Ignore Mac DS_Store files
 .DS_Store
