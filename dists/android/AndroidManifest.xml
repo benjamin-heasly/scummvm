@@ -30,6 +30,7 @@
 	</application>
 
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
 	<!-- Always needs some sort of qwerty keyboard.
 			Can work with a D-pad / trackball -->

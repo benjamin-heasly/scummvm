@@ -1,304 +1,345 @@
 package org.scummvm.scummvm;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
-import android.content.Context;
-import android.view.KeyEvent;
+import android.view.GestureDetector;
 import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
-import android.view.GestureDetector;
-import android.view.InputDevice;
 import android.view.inputmethod.InputMethodManager;
 
 public class ScummVMEvents implements
-		android.view.View.OnKeyListener,
-		android.view.View.OnTouchListener,
-		android.view.GestureDetector.OnGestureListener,
-		android.view.GestureDetector.OnDoubleTapListener {
+        android.view.View.OnKeyListener,
+        android.view.View.OnTouchListener,
+        android.view.GestureDetector.OnGestureListener,
+        android.view.GestureDetector.OnDoubleTapListener,
+        Speecherator.Listener {
 
-	public static final int JE_SYS_KEY = 0;
-	public static final int JE_KEY = 1;
-	public static final int JE_DPAD = 2;
-	public static final int JE_DOWN = 3;
-	public static final int JE_SCROLL = 4;
-	public static final int JE_TAP = 5;
-	public static final int JE_DOUBLE_TAP = 6;
-	public static final int JE_MULTI = 7;
-	public static final int JE_BALL = 8;
-	public static final int JE_LMB_DOWN = 9;
-	public static final int JE_LMB_UP = 10;
-	public static final int JE_RMB_DOWN = 11;
-	public static final int JE_RMB_UP = 12;
-	public static final int JE_MOUSE_MOVE = 13;
-	public static final int JE_GAMEPAD = 14;
-	public static final int JE_JOYSTICK = 15;
-	public static final int JE_MMB_DOWN = 16;
-	public static final int JE_MMB_UP = 17;
-	public static final int JE_QUIT = 0x1000;
+    public static final int JE_SYS_KEY = 0;
+    public static final int JE_KEY = 1;
+    public static final int JE_DPAD = 2;
+    public static final int JE_DOWN = 3;
+    public static final int JE_SCROLL = 4;
+    public static final int JE_TAP = 5;
+    public static final int JE_DOUBLE_TAP = 6;
+    public static final int JE_MULTI = 7;
+    public static final int JE_BALL = 8;
+    public static final int JE_LMB_DOWN = 9;
+    public static final int JE_LMB_UP = 10;
+    public static final int JE_RMB_DOWN = 11;
+    public static final int JE_RMB_UP = 12;
+    public static final int JE_MOUSE_MOVE = 13;
+    public static final int JE_GAMEPAD = 14;
+    public static final int JE_JOYSTICK = 15;
+    public static final int JE_MMB_DOWN = 16;
+    public static final int JE_MMB_UP = 17;
+    public static final int JE_QUIT = 0x1000;
 
-	final protected Context _context;
-	final protected ScummVM _scummvm;
-	final protected GestureDetector _gd;
-	final protected int _longPress;
-	final protected MouseHelper _mouseHelper;
+    final protected Context _context;
+    final protected ScummVM _scummvm;
+    final protected GestureDetector _gd;
+    final protected int _longPress;
+    final protected MouseHelper _mouseHelper;
 
-	public ScummVMEvents(Context context, ScummVM scummvm, MouseHelper mouseHelper) {
-		_context = context;
-		_scummvm = scummvm;
-		_mouseHelper = mouseHelper;
+    final protected Speecherator _speecherator;
 
-		_gd = new GestureDetector(context, this);
-		_gd.setOnDoubleTapListener(this);
-		_gd.setIsLongpressEnabled(false);
+    public ScummVMEvents(Context context, ScummVM scummvm, MouseHelper mouseHelper) {
+        _context = context;
+        _scummvm = scummvm;
+        _mouseHelper = mouseHelper;
 
-		_longPress = ViewConfiguration.getLongPressTimeout();
-	}
+        _gd = new GestureDetector(context, this);
+        _gd.setOnDoubleTapListener(this);
+        _gd.setIsLongpressEnabled(false);
 
-	final public void sendQuitEvent() {
-		_scummvm.pushEvent(JE_QUIT, 0, 0, 0, 0, 0);
-	}
+        _longPress = ViewConfiguration.getLongPressTimeout();
 
-	public boolean onTrackballEvent(MotionEvent e) {
-		_scummvm.pushEvent(JE_BALL, e.getAction(),
-							(int)(e.getX() * e.getXPrecision() * 100),
-							(int)(e.getY() * e.getYPrecision() * 100),
-							0, 0);
-		return true;
-	}
+        _speecherator = new Speecherator(this, context);
+    }
 
-	public boolean onGenericMotionEvent(MotionEvent e) {
-		return false;
-	}
+    final public void sendQuitEvent() {
+        _scummvm.pushEvent(JE_QUIT, 0, 0, 0, 0, 0);
+    }
 
-	final static int MSG_MENU_LONG_PRESS = 1;
+    public boolean onTrackballEvent(MotionEvent e) {
+        _scummvm.pushEvent(JE_BALL, e.getAction(),
+                (int) (e.getX() * e.getXPrecision() * 100),
+                (int) (e.getY() * e.getYPrecision() * 100),
+                0, 0);
+        return true;
+    }
 
-	final private Handler keyHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			if (msg.what == MSG_MENU_LONG_PRESS) {
-				InputMethodManager imm = (InputMethodManager)
-					_context.getSystemService(Context.INPUT_METHOD_SERVICE);
+    public boolean onGenericMotionEvent(MotionEvent e) {
+        return false;
+    }
 
-				if (imm != null)
-					imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
-			}
-		}
-	};
+    final static int MSG_MENU_LONG_PRESS = 1;
 
-	// OnKeyListener
-	@Override
-	final public boolean onKey(View v, int keyCode, KeyEvent e) {
-		final int action = e.getAction();
+    final private Handler keyHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == MSG_MENU_LONG_PRESS) {
+                InputMethodManager imm = (InputMethodManager)
+                        _context.getSystemService(Context.INPUT_METHOD_SERVICE);
 
-		if (keyCode == 238) {
-			// this (undocumented) event is sent when ACTION_HOVER_ENTER or ACTION_HOVER_EXIT occurs
-			return false;
-		}
+                if (imm != null)
+                    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+            }
+        }
+    };
 
-		if (keyCode == KeyEvent.KEYCODE_BACK) {
-			if (action != KeyEvent.ACTION_UP) {
-				// only send event from back button on up event, since down event is sent on right mouse click and
-				// cannot be caught (thus rmb click would send escape key first)
-				return true;
-			}
+    // OnKeyListener
+    @Override
+    final public boolean onKey(View v, int keyCode, KeyEvent e) {
+        final int action = e.getAction();
 
-			if (_mouseHelper != null) {
-				if (_mouseHelper.getRmbGuard()) {
-					// right mouse button was just clicked which sends an extra back button press
-					return true;
-				}
-			}
-		}
+        if (keyCode == 238) {
+            // this (undocumented) event is sent when ACTION_HOVER_ENTER or ACTION_HOVER_EXIT occurs
+            return false;
+        }
 
-		if (e.isSystem()) {
-			// filter what we handle
-			switch (keyCode) {
-			case KeyEvent.KEYCODE_BACK:
-			case KeyEvent.KEYCODE_MENU:
-			case KeyEvent.KEYCODE_CAMERA:
-			case KeyEvent.KEYCODE_SEARCH:
-				break;
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (action != KeyEvent.ACTION_UP) {
+                // only send event from back button on up event, since down event is sent on right mouse click and
+                // cannot be caught (thus rmb click would send escape key first)
+                return true;
+            }
 
-			default:
-				return false;
-			}
+            if (_mouseHelper != null) {
+                if (_mouseHelper.getRmbGuard()) {
+                    // right mouse button was just clicked which sends an extra back button press
+                    return true;
+                }
+            }
+        }
 
-			// no repeats for system keys
-			if (e.getRepeatCount() > 0)
-				return false;
+        if (e.isSystem()) {
+            // filter what we handle
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_BACK:
+                case KeyEvent.KEYCODE_MENU:
+                case KeyEvent.KEYCODE_CAMERA:
+                case KeyEvent.KEYCODE_SEARCH:
+                    break;
 
-			// Have to reimplement hold-down-menu-brings-up-softkeybd
-			// ourselves, since we are otherwise hijacking the menu key :(
-			// See com.android.internal.policy.impl.PhoneWindow.onKeyDownPanel()
-			// for the usual Android implementation of this feature.
-			if (keyCode == KeyEvent.KEYCODE_MENU) {
-				final boolean fired =
-					!keyHandler.hasMessages(MSG_MENU_LONG_PRESS);
+                default:
+                    return false;
+            }
 
-				keyHandler.removeMessages(MSG_MENU_LONG_PRESS);
+            // no repeats for system keys
+            if (e.getRepeatCount() > 0)
+                return false;
 
-				if (action == KeyEvent.ACTION_DOWN) {
-					keyHandler.sendMessageDelayed(keyHandler.obtainMessage(
-									MSG_MENU_LONG_PRESS), _longPress);
-					return true;
-				}
+            // Have to reimplement hold-down-menu-brings-up-softkeybd
+            // ourselves, since we are otherwise hijacking the menu key :(
+            // See com.android.internal.policy.impl.PhoneWindow.onKeyDownPanel()
+            // for the usual Android implementation of this feature.
+            if (keyCode == KeyEvent.KEYCODE_MENU) {
+                final boolean fired =
+                        !keyHandler.hasMessages(MSG_MENU_LONG_PRESS);
 
-				if (fired)
-					return true;
+                keyHandler.removeMessages(MSG_MENU_LONG_PRESS);
 
-				// only send up events of the menu button to the native side
-				if (action != KeyEvent.ACTION_UP)
-					return true;
-			}
+                if (action == KeyEvent.ACTION_DOWN) {
+                    keyHandler.sendMessageDelayed(keyHandler.obtainMessage(
+                            MSG_MENU_LONG_PRESS), _longPress);
+                    return true;
+                }
 
-			_scummvm.pushEvent(JE_SYS_KEY, action, keyCode, 0, 0, 0);
+                if (fired)
+                    return true;
 
-			return true;
-		}
+                // only send up events of the menu button to the native side
+                if (action != KeyEvent.ACTION_UP)
+                    return true;
+            }
 
-		// sequence of characters
-		if (action == KeyEvent.ACTION_MULTIPLE &&
-				keyCode == KeyEvent.KEYCODE_UNKNOWN) {
-			final KeyCharacterMap m = KeyCharacterMap.load(e.getDeviceId());
-			final KeyEvent[] es = m.getEvents(e.getCharacters().toCharArray());
+            _scummvm.pushEvent(JE_SYS_KEY, action, keyCode, 0, 0, 0);
 
-			if (es == null)
-				return true;
+            return true;
+        }
 
-			for (KeyEvent s : es) {
-				_scummvm.pushEvent(JE_KEY, s.getAction(), s.getKeyCode(),
-					s.getUnicodeChar() & KeyCharacterMap.COMBINING_ACCENT_MASK,
-					s.getMetaState(), s.getRepeatCount());
-			}
+        // sequence of characters
+        if (action == KeyEvent.ACTION_MULTIPLE &&
+                keyCode == KeyEvent.KEYCODE_UNKNOWN) {
+            final KeyCharacterMap m = KeyCharacterMap.load(e.getDeviceId());
+            final KeyEvent[] es = m.getEvents(e.getCharacters().toCharArray());
 
-			return true;
-		}
+            if (es == null)
+                return true;
 
-		switch (keyCode) {
-		case KeyEvent.KEYCODE_DPAD_UP:
-		case KeyEvent.KEYCODE_DPAD_DOWN:
-		case KeyEvent.KEYCODE_DPAD_LEFT:
-		case KeyEvent.KEYCODE_DPAD_RIGHT:
-		case KeyEvent.KEYCODE_DPAD_CENTER:
-			_scummvm.pushEvent(JE_DPAD, action, keyCode,
-								(int)(e.getEventTime() - e.getDownTime()),
-								e.getRepeatCount(), 0);
-			return true;
-		case KeyEvent.KEYCODE_BUTTON_A:
-		case KeyEvent.KEYCODE_BUTTON_B:
-		case KeyEvent.KEYCODE_BUTTON_C:
-		case KeyEvent.KEYCODE_BUTTON_X:
-		case KeyEvent.KEYCODE_BUTTON_Y:
-		case KeyEvent.KEYCODE_BUTTON_Z:
-		case KeyEvent.KEYCODE_BUTTON_L1:
-		case KeyEvent.KEYCODE_BUTTON_R1:
-		case KeyEvent.KEYCODE_BUTTON_L2:
-		case KeyEvent.KEYCODE_BUTTON_R2:
-		case KeyEvent.KEYCODE_BUTTON_THUMBL:
-		case KeyEvent.KEYCODE_BUTTON_THUMBR:
-		case KeyEvent.KEYCODE_BUTTON_START:
-		case KeyEvent.KEYCODE_BUTTON_SELECT:
-		case KeyEvent.KEYCODE_BUTTON_MODE:
-			_scummvm.pushEvent(JE_GAMEPAD, action, keyCode,
-								(int)(e.getEventTime() - e.getDownTime()),
-								e.getRepeatCount(), 0);
-			return true;
-		}
+            for (KeyEvent s : es) {
+                _scummvm.pushEvent(JE_KEY, s.getAction(), s.getKeyCode(),
+                        s.getUnicodeChar() & KeyCharacterMap.COMBINING_ACCENT_MASK,
+                        s.getMetaState(), s.getRepeatCount());
+            }
 
-		_scummvm.pushEvent(JE_KEY, action, keyCode,
-					e.getUnicodeChar() & KeyCharacterMap.COMBINING_ACCENT_MASK,
-					e.getMetaState(), e.getRepeatCount());
+            return true;
+        }
 
-		return true;
-	}
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+                _scummvm.pushEvent(JE_DPAD, action, keyCode,
+                        (int) (e.getEventTime() - e.getDownTime()),
+                        e.getRepeatCount(), 0);
+                return true;
+            case KeyEvent.KEYCODE_BUTTON_A:
+            case KeyEvent.KEYCODE_BUTTON_B:
+            case KeyEvent.KEYCODE_BUTTON_C:
+            case KeyEvent.KEYCODE_BUTTON_X:
+            case KeyEvent.KEYCODE_BUTTON_Y:
+            case KeyEvent.KEYCODE_BUTTON_Z:
+            case KeyEvent.KEYCODE_BUTTON_L1:
+            case KeyEvent.KEYCODE_BUTTON_R1:
+            case KeyEvent.KEYCODE_BUTTON_L2:
+            case KeyEvent.KEYCODE_BUTTON_R2:
+            case KeyEvent.KEYCODE_BUTTON_THUMBL:
+            case KeyEvent.KEYCODE_BUTTON_THUMBR:
+            case KeyEvent.KEYCODE_BUTTON_START:
+            case KeyEvent.KEYCODE_BUTTON_SELECT:
+            case KeyEvent.KEYCODE_BUTTON_MODE:
+                _scummvm.pushEvent(JE_GAMEPAD, action, keyCode,
+                        (int) (e.getEventTime() - e.getDownTime()),
+                        e.getRepeatCount(), 0);
+                return true;
+        }
 
-	// OnTouchListener
-	@Override
-	final public boolean onTouch(View v, MotionEvent e) {
-		if (_mouseHelper != null) {
-			boolean isMouse = MouseHelper.isMouse(e);
-			if (isMouse) {
-				// mouse button is pressed
-				return _mouseHelper.onMouseEvent(e, false);
-			}
-		}
+        _scummvm.pushEvent(JE_KEY, action, keyCode,
+                e.getUnicodeChar() & KeyCharacterMap.COMBINING_ACCENT_MASK,
+                e.getMetaState(), e.getRepeatCount());
 
-		final int action = e.getAction();
+        return true;
+    }
 
-		// constants from APIv5:
-		// (action & ACTION_POINTER_INDEX_MASK) >> ACTION_POINTER_INDEX_SHIFT
-		final int pointer = (action & 0xff00) >> 8;
+    // OnTouchListener
+    @Override
+    final public boolean onTouch(View v, MotionEvent e) {
+        if (_mouseHelper != null) {
+            boolean isMouse = MouseHelper.isMouse(e);
+            if (isMouse) {
+                // mouse button is pressed
+                return _mouseHelper.onMouseEvent(e, false);
+            }
+        }
 
-		if (pointer > 0) {
-			_scummvm.pushEvent(JE_MULTI, pointer, action & 0xff, // ACTION_MASK
-								(int)e.getX(), (int)e.getY(), 0);
-			return true;
-		}
+        final int action = e.getAction();
 
-		return _gd.onTouchEvent(e);
-	}
+        // constants from APIv5:
+        // (action & ACTION_POINTER_INDEX_MASK) >> ACTION_POINTER_INDEX_SHIFT
+        final int pointer = (action & 0xff00) >> 8;
 
-	// OnGestureListener
-	@Override
-	final public boolean onDown(MotionEvent e) {
-		_scummvm.pushEvent(JE_DOWN, (int)e.getX(), (int)e.getY(), 0, 0, 0);
-		return true;
-	}
+        if (pointer > 0) {
+            _scummvm.pushEvent(JE_MULTI, pointer, action & 0xff, // ACTION_MASK
+                    (int) e.getX(), (int) e.getY(), 0);
+            return true;
+        }
 
-	@Override
-	final public boolean onFling(MotionEvent e1, MotionEvent e2,
-									float velocityX, float velocityY) {
-		//Log.d(ScummVM.LOG_TAG, String.format("onFling: %s -> %s (%.3f %.3f)",
-		//										e1.toString(), e2.toString(),
-		//										velocityX, velocityY));
+        return _gd.onTouchEvent(e);
+    }
 
-		return true;
-	}
+    // OnGestureListener
+    @Override
+    final public boolean onDown(MotionEvent e) {
+        _scummvm.pushEvent(JE_DOWN, (int) e.getX(), (int) e.getY(), 0, 0, 0);
+        return true;
+    }
 
-	@Override
-	final public void onLongPress(MotionEvent e) {
-		// disabled, interferes with drag&drop
-	}
+    @Override
+    final public boolean onFling(MotionEvent e1, MotionEvent e2,
+                                 float velocityX, float velocityY) {
+        //Log.d(ScummVM.LOG_TAG, String.format("onFling: %s -> %s (%.3f %.3f)",
+        //										e1.toString(), e2.toString(),
+        //										velocityX, velocityY));
 
-	@Override
-	final public boolean onScroll(MotionEvent e1, MotionEvent e2,
-									float distanceX, float distanceY) {
-		_scummvm.pushEvent(JE_SCROLL, (int)e1.getX(), (int)e1.getY(),
-							(int)e2.getX(), (int)e2.getY(), 0);
+        return true;
+    }
 
-		return true;
-	}
+    @Override
+    final public void onLongPress(MotionEvent e) {
+        // disabled, interferes with drag&drop
+    }
 
-	@Override
-	final public void onShowPress(MotionEvent e) {
-	}
+    @Override
+    final public boolean onScroll(MotionEvent e1, MotionEvent e2,
+                                  float distanceX, float distanceY) {
+        _scummvm.pushEvent(JE_SCROLL, (int) e1.getX(), (int) e1.getY(),
+                (int) e2.getX(), (int) e2.getY(), 0);
 
-	@Override
-	final public boolean onSingleTapUp(MotionEvent e) {
-		_scummvm.pushEvent(JE_TAP, (int)e.getX(), (int)e.getY(),
-							(int)(e.getEventTime() - e.getDownTime()), 0, 0);
+        return true;
+    }
 
-		return true;
-	}
+    @Override
+    final public void onShowPress(MotionEvent e) {
+    }
 
-	// OnDoubleTapListener
-	@Override
-	final public boolean onDoubleTap(MotionEvent e) {
-		return true;
-	}
+    @Override
+    final public boolean onSingleTapUp(MotionEvent e) {
+        _scummvm.pushEvent(JE_TAP, (int) e.getX(), (int) e.getY(),
+                (int) (e.getEventTime() - e.getDownTime()), 0, 0);
 
-	@Override
-	final public boolean onDoubleTapEvent(MotionEvent e) {
-		_scummvm.pushEvent(JE_DOUBLE_TAP, (int)e.getX(), (int)e.getY(),
-							e.getAction(), 0, 0);
+        return true;
+    }
 
-		return true;
-	}
+    // OnDoubleTapListener
+    @Override
+    final public boolean onDoubleTap(MotionEvent e) {
+        return true;
+    }
 
-	@Override
-	final public boolean onSingleTapConfirmed(MotionEvent e) {
-		return true;
-	}
+    @Override
+    final public boolean onDoubleTapEvent(MotionEvent e) {
+        _scummvm.pushEvent(JE_DOUBLE_TAP, (int) e.getX(), (int) e.getY(),
+                e.getAction(), 0, 0);
+
+        return true;
+    }
+
+    @Override
+    final public boolean onSingleTapConfirmed(MotionEvent e) {
+        return true;
+    }
+
+    @Override
+    public void onResults(String results) {
+        pushStringEvents(results);
+    }
+
+    @Override
+    public void onError(int error) {
+        pushStringEvents("error " + error);
+    }
+
+    private void pushStringEvents(String string) {
+        if (null == _scummvm || null == string || string.isEmpty()) {
+            return;
+        }
+
+        final KeyCharacterMap keyCharacterMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
+        final KeyEvent[] keyEvents = keyCharacterMap.getEvents(string.toCharArray());
+
+        if (null == keyEvents) {
+            return;
+        }
+
+        for (KeyEvent keyEvent : keyEvents) {
+            _scummvm.pushEvent(JE_KEY, keyEvent.getAction(), keyEvent.getKeyCode(),
+                    keyEvent.getUnicodeChar() & KeyCharacterMap.COMBINING_ACCENT_MASK,
+                    keyEvent.getMetaState(), keyEvent.getRepeatCount());
+        }
+    }
+
+    public void onPause() {
+        _speecherator.destroyRecognizer();
+    }
+
+    public void onResume() {
+        _speecherator.createRecognizer();
+    }
 }
